@@ -44,7 +44,7 @@
 
         var company = order.MerchantCompanyInfo;
         var address = order.BillingAddress;
-
+		
 		<div class="document">
 
 			@{ Html.RenderWidget("invoice_top", order); }
@@ -62,27 +62,7 @@
 						</span>
 					</div>
 					<div class="mt-2">
-						@if (address.CompanyEnabled && address.Company.HasValue())
-                        {
-							<div>@address.Company</div>
-                        }
-						<div>@JoinValues(new string[] { address.FirstName, address.LastName })</div>
-						@if (address.StreetAddressEnabled && address.Address1.HasValue())
-                        {
-							<div>@address.Address1</div>
-                        }
-						@if (address.StreetAddress2Enabled && address.Address2.HasValue())
-                        {
-							<div>@address.Address2</div>
-                        }
-						@if (address.ZipPostalCodeEnabled || address.CityEnabled)
-                        {
-							<div>@JoinValues(new string[] { address.ZipPostalCode, address.City })</div>
-                        }
-						@if (address.StateProvinceEnabled || address.CountryEnabled)
-                        {
-							<div>@JoinValues(new string[] { address.CountryName, address.StateProvinceName }, ", ")</div>
-                        }
+						@Html.Raw(address.FormattedAddress)
 					</div>
 				</div>
 
@@ -93,6 +73,10 @@
 						<tr>
 							<td class="label">@T("PDFInvoice.Order#"):</td>
 							<td class="value">@order.OrderNumber</td>
+						</tr>
+						<tr>
+							<td class="label">Purchase Order Number:</td>
+							<td class="value">@order.PurchaseOrderNumber</td>
 						</tr>
 						<tr>
 							<td class="label">@T("Common.Date"):</td>
@@ -120,31 +104,33 @@
 
 			<h3>@T("PDFInvoice.Product(s)")</h3>
 
-			<table class="table order-summary">
-				<thead>
-					<tr>
-						<th style="width: @(colWidths[0])%">@T("PDFInvoice.ProductName")</th>
-						@if (order.ShowSku)
-                        {
-							<th style="width: @(colWidths[1])%">@T("PDFInvoice.SKU")</th>
-                        }
-						<th class="text-center" style="width: @(colWidths[2])%">@T("PDFInvoice.ProductQuantity")</th>
-						<th class="text-right" style="width: @(colWidths[3])%">@T("PDFInvoice.ProductPrice")</th>
-						<th class="text-right" style="width: @(colWidths[4])%">@T("PDFInvoice.ProductTotal")</th>
-					</tr>
-				</thead>
-				@for (int i = 0; i < order.Items.Count; i++)
-                {
-                    var item = order.Items[i];
-					<tbody>
-						@OrderLine(item, order.ShowSku)
-						@if (item.ProductType == ProductType.BundledProduct)
-                        {
-							@BundleItems(item, order.ShowSku)
-                        }
-					</tbody>
-                }
-			</table>
+			<div class="table-responsive">
+				<table class="table order-summary">
+					<thead>
+						<tr>
+							<th style="width: @(colWidths[0])%">@T("PDFInvoice.ProductName")</th>
+							@if (order.ShowSku)
+							{
+								<th style="width: @(colWidths[1])%">@T("PDFInvoice.SKU")</th>
+							}
+							<th class="text-center" style="width: @(colWidths[2])%">@T("PDFInvoice.ProductQuantity")</th>
+							<th class="text-right" style="width: @(colWidths[3])%">@T("PDFInvoice.ProductPrice")</th>
+							<th class="text-right" style="width: @(colWidths[4])%">@T("PDFInvoice.ProductTotal")</th>
+						</tr>
+					</thead>
+					@for (int i = 0; i < order.Items.Count; i++)
+					{
+						var item = order.Items[i];
+						<tbody>
+							@OrderLine(item, order.ShowSku)
+							@if (item.ProductType == ProductType.BundledProduct)
+							{
+								@BundleItems(item, order.ShowSku)
+							}
+						</tbody>
+					}
+				</table>
+			</div>
 
 			<!-- Checkout attributes -->
             @{ Html.RenderWidget("invoice_checkoutattributes_before", order); }
@@ -160,7 +146,7 @@
 			@{ Html.RenderWidget("invoice_ordertotals_before", order); }
 
 			<div class="order-totals clearfix">
-				<div class="pull-right" style="width: 40%; page-break-inside: avoid">
+				<div class="pull-right table-responsive" style="width: 40%; page-break-inside: avoid">
 					<table class="table order-totals">
 						<tr>
 							<td class="label">@T("Order.SubTotal"):</td>
@@ -243,7 +229,7 @@
             {
 				<h3>@T("PDFInvoice.OrderNotes")</h3>
 
-				<div class="order-notes mt-2">
+				<div class="order-notes mt-2 table-responsive">
 					<table class="table">
 						<thead>
 							<tr>

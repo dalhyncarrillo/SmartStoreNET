@@ -67,10 +67,11 @@ namespace SmartStore.Web.Models.ShoppingCart
 		public bool? AcceptThirdPartyEmailHandOver { get; set; }
 
 		public bool DisplayEsdRevocationWaiverBox { get; set; }
+        public bool DisplayMoveToWishlistButton { get; set; }
 
-		#region Nested Classes
+        #region Nested Classes
 
-		public partial class ShoppingCartItemModel : EntityModelBase, IQuantityInput
+        public partial class ShoppingCartItemModel : EntityModelBase, IQuantityInput
         {
             public ShoppingCartItemModel()
             {
@@ -143,6 +144,8 @@ namespace SmartStore.Web.Models.ShoppingCart
 			public bool BundlePerItemShoppingCart { get; set; }
 			public BundleItemModel BundleItem { get; set; }
 			public IList<ShoppingCartItemModel> ChildItems { get; set; }
+
+			public bool DisableWishlistButton { get; set; }
 
 			public DateTime CreatedOnUtc { get; set; }
         }

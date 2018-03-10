@@ -14,6 +14,7 @@ using SmartStore.Web.Framework.Controllers;
 using SmartStore.Web.Framework.Filters;
 using SmartStore.Web.Framework.Security;
 using Telerik.Web.Mvc;
+using SmartStore.Web.Framework;
 
 namespace SmartStore.Admin.Controllers
 {
@@ -79,14 +80,12 @@ namespace SmartStore.Admin.Controllers
 			if (model == null)
 				throw new ArgumentNullException("model");
 
-			var allStores = _services.StoreService.GetAllStores();
-
-			model.AvailableStores = allStores.Select(s => s.ToModel()).ToList();
-
 			if (!excludeProperties)
 			{
 				model.SelectedStoreIds = _storeMappingService.GetStoresIdsWithAccess(country);
 			}
+
+			model.AvailableStores = _services.StoreService.GetAllStores().ToSelectListItems(model.SelectedStoreIds);
 		}
 
         #endregion

@@ -158,16 +158,9 @@ namespace SmartStore.Admin.Controllers
 			if (model == null)
 				throw new ArgumentNullException("model");
 
-			model.GridPageSize = _adminAreaSettings.GridPageSize;
-
-			model.AvailableStores = _storeService
-				.GetAllStores()
-				.Select(s => s.ToModel())
-				.ToList();
-
 			if (!excludeProperties)
 			{
-				model.SelectedStoreIds = (manufacturer != null ? _storeMappingService.GetStoresIdsWithAccess(manufacturer) : new int[0]);
+				model.SelectedStoreIds = _storeMappingService.GetStoresIdsWithAccess(manufacturer);
 				model.SelectedDiscountIds = (manufacturer != null ? manufacturer.AppliedDiscounts.Select(d => d.Id).ToArray() : new int[0]);
 			}
 
@@ -177,6 +170,8 @@ namespace SmartStore.Admin.Controllers
 				model.UpdatedOn = _dateTimeHelper.ConvertToUserTime(manufacturer.UpdatedOnUtc, DateTimeKind.Utc);
 			}
 
+			model.GridPageSize = _adminAreaSettings.GridPageSize;
+			model.AvailableStores = _storeService.GetAllStores().ToSelectListItems(model.SelectedStoreIds);
 			model.AvailableDiscounts = _discountService.GetAllDiscounts(DiscountType.AssignedToManufacturers, null, true).ToList();
 		}
 
@@ -207,17 +202,8 @@ namespace SmartStore.Admin.Controllers
 			var mru = new MostRecentlyUsedList<string>(_workContext.CurrentCustomer.GetAttribute<string>(SystemCustomerAttributeNames.MostRecentlyUsedManufacturers),
 				_catalogSettings.MostRecentlyUsedManufacturersMaxSize);
 
-			// TODO: insert disabled option separator (select2 v.3.4.2 or higher required)
-			//if (mru.Count > 0)
-			//{
-			//	data.Insert(0, new
-			//	{
-			//		id = "",
-			//		text = "----------------------",
-			//		selected = false,
-			//		disabled = true
-			//	});
-			//}
+			// TODO: return two option groups... new JsonResult { Data = new object[] { new { text = "Last used", children = mruItems }, new { text = "All Manufacturers", children = items } } };
+			// and load them through select2.ajax option.
 
 			for (int i = mru.Count - 1; i >= 0; --i)
 			{
@@ -562,12 +548,11 @@ namespace SmartStore.Admin.Controllers
         }       
 
 		[HttpPost]
-		public ActionResult ProductAdd(int manufacturerId, string selectedProductIds)
+		public ActionResult ProductAdd(int manufacturerId, int[] selectedProductIds)
 		{
 			if (_permissionService.Authorize(StandardPermissionProvider.ManageCatalog))
 			{
-				var productIds = selectedProductIds.SplitSafe(",").Select(x => x.ToInt()).ToArray();
-				var products = _productService.GetProductsByIds(productIds);
+				var products = _productService.GetProductsByIds(selectedProductIds);
 				ProductManufacturer productManu = null;
 				var maxDisplayOrder = -1;
 

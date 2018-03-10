@@ -27,7 +27,7 @@
             @if (Model.IsCurrentCustomerAllowedToDeletePost)
             {
                     <i class="fa fa-times"></i>
-                    @Html.ActionLink(@T("Forum.DeletePost").Text, "PostDelete", new { id = Model.Id }, new { onClick = String.Format("return confirm('{0}');", T("Common.AreYouSure").Text), @class = "delete-post-link-button" })
+                    @Html.ActionLink(@T("Forum.DeletePost").Text, "PostDelete", new { id = Model.Id }, new { onClick = String.Format("return confirm({0});", T("Common.AreYouSure").JsText), @class = "delete-post-link-button" })
             }
 
             @if (@Model.CurrentTopicPage > 1)
@@ -41,7 +41,7 @@
         </div>
     </div>
 
-    <div class="block-body card-block row">
+    <div class="block-body card-body row">
         <div class="post-info col-3 d-none d-sm-block">
             <div class="user-info mt-3 text-center">
                 @if (!String.IsNullOrEmpty(Model.CustomerAvatarUrl))

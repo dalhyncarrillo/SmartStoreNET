@@ -17,7 +17,7 @@
     </div>
 
     <div class="page-body">
-		<div class="card card-block shipment-box mb-4">
+		<div class="card card-body shipment-box mb-4">
 			<div class="row">
 				<div class="col-6 col-md-4">
 					<h5>@T("Order.Shipments.Order#")</h5>
@@ -172,39 +172,7 @@
 	var cityStateZip = address.GetFormattedCityStateZip();
 
 	<div class="mb-2">
-		@if (address.CompanyEnabled && address.Company.HasValue())
-		{
-			<div class="company">
-				@address.Company
-			</div>
-		}
-		<div class="name">
-			@address.GetFormattedName()
-		</div>
-		@if (address.StreetAddressEnabled && address.Address1.HasValue())
-		{
-			<div class="address1">
-				@address.Address1
-			</div>
-		}
-		@if (address.StreetAddress2Enabled && address.Address2.HasValue())
-		{
-			<div class="address2">
-				@address.Address2
-			</div>
-		}
-		@if (cityStateZip.HasValue())
-		{
-			<div class="city-state-zip">
-				@Html.Raw(cityStateZip)
-			</div>
-		}
-		@if (address.CountryEnabled && address.CountryName.HasValue())
-		{
-			<div class="country">
-				@address.CountryName
-			</div>
-		}
+		@Html.Raw(address.FormattedAddress)
 	</div>
 
 	<div class="email">

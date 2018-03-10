@@ -32,20 +32,20 @@
             <h1 class="fs-h2">@T("Forum.Search")</h1>
         </div>
 
-        <div class="search-input col-10 push-1 mt-4">
+        <div class="search-input col-10 mt-4 justify-content-center">
             @using (Html.BeginRouteForm("BoardSearch", FormMethod.Get))
             {
                 
                 <div class="input-group d-flex">
                     @Html.TextBox("searchterms", null, new { @class = "forum-search-text form-control" })
-                    <input type="submit" class="btn btn-primary input-group-addon" value="@T("Forum.SearchButton")" />
+					<div class="input-group-append">
+						<input type="submit" class="btn btn-primary" value="@T("Forum.SearchButton")" />
+					</div>
                 </div>
 
-                <div class="checkbox mt-2">
-                    <label class="form-check-label">
-                        @Html.CheckBox("adv", Model.ShowAdvancedSearch, new { @class = "check-box form-check-input" })
-                        @T("Forum.Search.AdvancedSearch")
-                    </label>
+                <div class="form-check mt-2">
+					@Html.CheckBox("adv", Model.ShowAdvancedSearch, new { @class = "form-check-input" })
+                    <label class="form-check-label" for="adv">@T("Forum.Search.AdvancedSearch")</label>
                 </div>
                 
                 <div id="advanced-search-block" style="display: none;">
@@ -103,7 +103,7 @@
             {
                 <span class="result">@T("Forum.SearchNoResultsText")</span>
             }
-            <div class="topics-group">
+            <div class="topics-group table-responsive">
                 @if (@Model.SearchResultsVisible == true)
                 {
                     <table class="table">

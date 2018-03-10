@@ -85,6 +85,8 @@ namespace SmartStore.Admin.Models.Orders
         public int RedeemedRewardPoints { get; set; }
         [SmartResourceDisplayName("Admin.Orders.Fields.RedeemedRewardPoints")]
         public string RedeemedRewardPointsAmount { get; set; }
+        [SmartResourceDisplayName("Admin.Orders.Fields.OrderTotalRounding")]
+        public string OrderTotalRounding { get; set; }
         [SmartResourceDisplayName("Admin.Orders.Fields.OrderTotal")]
         public string OrderTotal { get; set; }
         [SmartResourceDisplayName("Admin.Orders.Fields.RefundedAmount")]
@@ -113,6 +115,8 @@ namespace SmartStore.Admin.Models.Orders
         public string TaxRatesValue { get; set; }
         [SmartResourceDisplayName("Admin.Orders.Fields.Edit.OrderTotalDiscount")]
         public decimal OrderTotalDiscountValue { get; set; }
+        [SmartResourceDisplayName("Admin.Orders.Fields.OrderTotalRounding")]
+        public decimal OrderTotalRoundingValue { get; set; }
         [SmartResourceDisplayName("Admin.Orders.Fields.Edit.OrderTotal")]
         public decimal OrderTotalValue { get; set; }
 
@@ -165,7 +169,7 @@ namespace SmartStore.Admin.Models.Orders
 				switch (StatusPayment)
 				{
 					case Core.Domain.Payments.PaymentStatus.Pending:
-						return "fa fa-fw fa-circle text-error";
+						return "fa fa-fw fa-circle text-danger";
 					case Core.Domain.Payments.PaymentStatus.Authorized:
 						return "fa fa-fw fa-circle text-warning";
 					case Core.Domain.Payments.PaymentStatus.Paid:
@@ -279,7 +283,7 @@ namespace SmartStore.Admin.Models.Orders
 					case Core.Domain.Shipping.ShippingStatus.ShippingNotRequired:
 						return "fa fa-fw fa-download muted";
 					case Core.Domain.Shipping.ShippingStatus.NotYetShipped:
-						return "fa fa-fw fa-circle text-error";
+						return "fa fa-fw fa-circle text-danger";
 					case Core.Domain.Shipping.ShippingStatus.PartiallyShipped:
 						return "fa fa-fw fa-truck fa-flip-horizontal text-warning";
 					case Core.Domain.Shipping.ShippingStatus.Shipped:
@@ -439,7 +443,10 @@ namespace SmartStore.Admin.Models.Orders
 					if (Status == ReturnRequestStatus.Received)
 						return "info";
 
-					return "";
+					if (Status == ReturnRequestStatus.Pending)
+						return "danger";
+
+					return "light";
 				}
 			}
 		}

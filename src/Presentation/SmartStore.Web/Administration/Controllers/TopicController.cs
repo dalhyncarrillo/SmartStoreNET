@@ -13,6 +13,7 @@ using SmartStore.Web.Framework.Filters;
 using SmartStore.Web.Framework.Modelling;
 using SmartStore.Web.Framework.Security;
 using Telerik.Web.Mvc;
+using SmartStore.Web.Framework;
 
 namespace SmartStore.Admin.Controllers
 {
@@ -88,24 +89,14 @@ namespace SmartStore.Admin.Controllers
 		[NonAction]
 		private void PrepareStoresMappingModel(TopicModel model, Topic topic, bool excludeProperties)
 		{
-			if (model == null)
-				throw new ArgumentNullException("model");
+			Guard.NotNull(model, nameof(model));
 
-			model.AvailableStores = _storeService
-				.GetAllStores()
-				.Select(s => s.ToModel())
-				.ToList();
 			if (!excludeProperties)
 			{
-				if (topic != null)
-				{
-					model.SelectedStoreIds = _storeMappingService.GetStoresIdsWithAccess(topic);
-				}
-				else
-				{
-					model.SelectedStoreIds = new int[0];
-				}
+				model.SelectedStoreIds = _storeMappingService.GetStoresIdsWithAccess(topic);
 			}
+
+			model.AvailableStores = _storeService.GetAllStores().ToSelectListItems(model.SelectedStoreIds);
 		}
 
         #endregion
@@ -262,7 +253,8 @@ namespace SmartStore.Admin.Controllers
             if (ModelState.IsValid)
             {
                 topic = model.ToEntity(topic);
-                _topicService.UpdateTopic(topic);
+				topic.WidgetZone = form["WidgetZone"];
+				_topicService.UpdateTopic(topic);
 				
 				//Stores
 				_storeMappingService.SaveStoreMappings<Topic>(topic, model.SelectedStoreIds);

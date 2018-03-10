@@ -7,9 +7,8 @@ function closeModalWindow() {
 }
 function openModalWindow(modalId) {
     currentModalId = modalId;
-    $('#' + modalId).data('modal').show();
+    $('#' + modalId).modal('show');
 }
-
 
 // global Admin namespace
 var Admin = {
@@ -22,36 +21,27 @@ var Admin = {
 	},
 
 	checkAllOverriddenStoreValue: function (obj) {
-		$('input.multi-store-override-option').each(function (index, elem) {
-			Admin.checkboxCheck(elem, obj.checked);
-			Admin.checkOverriddenStoreValue(elem);
+		$('.multi-store-override-option').each(function (i, el) {
+			Admin.checkboxCheck(el, obj.checked);
+			Admin.checkOverriddenStoreValue(el);
 		});
 	},
 
-	checkOverriddenStoreValue: function (checkbox) {
-		var parentSelector = $(checkbox).attr('data-parent-selector').toString(),
-			parent = (parentSelector.length > 0 ? $(parentSelector) : $(checkbox).closest('.switch').parent()),
-			checked = $(checkbox).is(':checked');
+	checkOverriddenStoreValue: function (el) {
+		var checkbox = $(el);
+		var parentSelector = checkbox.data('parent-selector'),
+			parent = parentSelector ? $(parentSelector) : checkbox.closest('.multi-store-setting-group').find('> .multi-store-setting-control'),
+			checked = checkbox.is(':checked');
 
-		parent.find(':input:not([type=hidden])').each(function (index, elem) {
-			if ($(elem).is('select')) {
-				$(elem).select2(checked ? 'enable' : 'disable');
+		parent.find('input:not([type=hidden]), select').each(function (i, el) {
+			var input = $(el);
+			var tbox = input.data('tTextBox');
+
+			if (tbox) {
+				checked ? tbox.enable() : tbox.disable();
 			}
-			else if (!$(elem).hasClass('multi-store-override-option')) {
-				var tData = $(elem).data('tTextBox');
-
-				if (tData != null) {
-					if (checked)
-						tData.enable();
-					else
-						tData.disable();
-				}
-				else {
-					if (checked)
-						$(elem).removeAttr('disabled');
-					else
-						$(elem).attr('disabled', 'disabled');
-				}
+			else {
+				checked ? input.removeAttr('disabled') : input.attr('disabled', true);
 			}
 		});
 	},
@@ -66,12 +56,57 @@ var Admin = {
 				var form = $('.plugin-config-container form').first();
 				if (form) {
 					// ...but first add a hidden input to the form with button's name and value to mimic button click WITHIN the form.
-					var btn = $(e.srcElement);
+					var btn = $(e.currentTarget);
 					form.prepend($('<input type="hidden" name="' + btn.attr('name') + '" value="' + btn.attr('value') + '" />'));
 					form.submit();
 				}
 			});
 		}
+	},
+
+	togglePanel: function(el /* the toggler */, animate) {
+		var ctl = $(el),
+			show = ctl.is(':checked'),
+			reverse = ctl.data('toggler-reverse');
+
+		if (reverse) show = !show;
+
+		var duration = animate ? 200 : 0;
+
+		function afterShow() { $(this).addClass('expanded'); }
+		function afterHide() { $(this).removeClass('expanded'); }
+
+		$(ctl.data('toggler-for')).each(function (i, cel) {
+			var pnl = $(cel),
+				isGroup = pnl.is('tbody, .collapsible-group');
+
+			pnl.addClass('collapsible');
+			if (isGroup) pnl.addClass('collapsible-group')
+
+			if (show) {
+				if (!isGroup) {
+					pnl.show(duration, afterShow);
+				}
+				else {
+					var targets = pnl.children()
+						.hide() // initially hide all children asap
+						.filter(':not(.collapsible), .collapsible.expanded'); // fetch only expandable items
+					pnl.show(0, afterShow); // first, show panel group asap (otherwise we won't see any animation)
+					targets.show(duration); // animate all items
+				}
+			}
+			else {
+				if (!isGroup) {
+					pnl.hide(duration, afterHide);
+				}
+				else {
+					// hide all children (animated)
+					pnl.children().hide(duration).promise().done(function () {
+						pnl.hide(0, afterHide); // last, hide panel group asap
+					});
+				}
+			}
+		});
 	},
 
 	TaskWatcher: (function () {
@@ -103,7 +138,7 @@ var Admin = {
 										var row1 = $('<div class="hint clearfix" style="position: relative"></div>').appendTo(el);
 										row1.append($('<div class="text pull-left">' + (task.message || opts.defaultProgressMessage) + '</div>'));
 										row1.append($('<div class="percent pull-right">' + (task.percent >> 0 ? task.percent + ' %' : "") + '</div>'));
-										var row2 = $('<div class="loading-bar" style="margin-top: 4px"></div>').appendTo(el);
+										var row2 = $('<div class="loading-bar mt-2"></div>').appendTo(el);
 										el.attr('data-running', 'true').data('running', true);
 										if (_.isFunction(opts.onTaskStarted)) {
 											opts.onTaskStarted(task, el);
@@ -139,4 +174,10 @@ var Admin = {
 	})()
 };
 
-
+(function () {
+	// TODO: (mc) BS4 > move SmartStore namespace to SmartStore.Web and replace $.smartstore.
+	// Also move 'Admin' object above to SmartStore.Admin.
+	SmartStore.Admin = {
+		modelTrees: {}
+	};
+})();

@@ -153,22 +153,15 @@ namespace SmartStore.PayPal.Controllers
 			return paymentInfo;
 		}
 
-		[AdminAuthorize, ChildActionOnly]
-		public ActionResult Configure()
+		[LoadSetting, AdminAuthorize, ChildActionOnly]
+		public ActionResult Configure(PayPalPlusPaymentSettings settings, int storeScope)
 		{
-			var storeScope = this.GetActiveStoreScopeConfiguration(Services.StoreService, Services.WorkContext);
-			var settings = Services.Settings.LoadSetting<PayPalPlusPaymentSettings>(storeScope);
-
 			var model = new PayPalPlusConfigurationModel
 			{
 				ConfigGroups = T("Plugins.SmartStore.PayPal.ConfigGroups").Text.SplitSafe(";")
 			};
 
-			model.AvailableSecurityProtocols = PayPal.Services.PayPalService.GetSecurityProtocols()
-				.Select(x => new SelectListItem { Value = ((int)x.Key).ToString(), Text = x.Value })
-				.ToList();
-
-			// it's better to also offer inactive methods here but filter them out in frontend
+			// It's better to also offer inactive methods here but filter them out in frontend.
 			var methods = _paymentService.LoadAllPaymentMethods(storeScope);
 
 			model.AvailableThirdPartyPaymentMethods = methods
@@ -179,11 +172,8 @@ namespace SmartStore.PayPal.Controllers
 				.Select(x => new SelectListItem { Value = x.Metadata.SystemName, Text = GetPaymentMethodName(x) })
 				.ToList();
 
-
 			model.Copy(settings, true);
-
-			var storeDependingSettingHelper = new StoreDependingSettingHelper(ViewData);
-			storeDependingSettingHelper.GetOverrideKeys(settings, model, storeScope, Services.Settings);
+			PrepareConfigurationModel(model, storeScope);
 
 			return View(model);
 		}
@@ -194,6 +184,7 @@ namespace SmartStore.PayPal.Controllers
 			var storeDependingSettingHelper = new StoreDependingSettingHelper(ViewData);
 			var storeScope = this.GetActiveStoreScopeConfiguration(Services.StoreService, Services.WorkContext);
 			var settings = Services.Settings.LoadSetting<PayPalPlusPaymentSettings>(storeScope);
+
 			var oldClientId = settings.ClientId;
 			var oldSecret = settings.Secret;
 			var oldProfileId = settings.ExperienceProfileId;
@@ -206,13 +197,14 @@ namespace SmartStore.PayPal.Controllers
 			validator.Validate(model, ModelState);
 
 			if (!ModelState.IsValid)
-				return Configure();
+			{
+				return Configure(settings, storeScope);
+			}
 
 			ModelState.Clear();
-
 			model.Copy(settings, false);
 
-			// credentials changed: reset profile and webhook id to avoid errors
+			// Credentials changed: reset profile and webhook id to avoid errors.
 			if (!oldClientId.IsCaseInsensitiveEqual(settings.ClientId) || !oldSecret.IsCaseInsensitiveEqual(settings.Secret))
 			{
 				if (oldProfileId.IsCaseInsensitiveEqual(settings.ExperienceProfileId))
@@ -224,12 +216,17 @@ namespace SmartStore.PayPal.Controllers
 			using (Services.Settings.BeginScope())
 			{
 				storeDependingSettingHelper.UpdateSettings(settings, form, storeScope, Services.Settings);
+			}
+
+			using (Services.Settings.BeginScope())
+			{
+				// Multistore context not possible, see IPN handling.
 				Services.Settings.SaveSetting(settings, x => x.UseSandbox, 0, false);
 			}
 
 			NotifySuccess(T("Admin.Common.DataSuccessfullySaved"));
 
-			return Configure();
+			return RedirectToConfiguration(PayPalPlusProvider.SystemName, false);
 		}
 
 		public ActionResult PaymentInfo()

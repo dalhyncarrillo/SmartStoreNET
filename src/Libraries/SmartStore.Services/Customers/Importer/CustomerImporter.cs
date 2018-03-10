@@ -96,9 +96,11 @@ namespace SmartStore.Services.Customers.Importer
 				_genericAttributeService.GetAttributes(SystemCustomerAttributeNames.CustomerNumber, _attributeKeyGroup).Select(x => x.Value),
 				StringComparer.OrdinalIgnoreCase);
 
-			var allCustomerRoles = _customerRoleRepository.Table.ToDictionarySafe(x => x.SystemName, StringComparer.OrdinalIgnoreCase);
+			var allCustomerRoles = _customerRoleRepository.Table
+				.Where(x => !string.IsNullOrEmpty(x.SystemName))
+				.ToDictionarySafe(x => x.SystemName, StringComparer.OrdinalIgnoreCase);
 
-			using (var scope = new DbContextScope(ctx: _services.DbContext, autoDetectChanges: false, proxyCreation: false, validateOnSave: false, autoCommit: false))
+			using (var scope = new DbContextScope(ctx: _services.DbContext, hooksEnabled: false, autoDetectChanges: false, proxyCreation: false, validateOnSave: false, autoCommit: false))
 			{
 				var segmenter = context.DataSegmenter;
 
@@ -204,8 +206,6 @@ namespace SmartStore.Services.Customers.Importer
 		{
 			_customerRepository.AutoCommitEnabled = true;
 
-			Customer lastInserted = null;
-			Customer lastUpdated = null;
 			var currentCustomer = _services.WorkContext.CurrentCustomer;
 			var customerQuery = _customerRepository.Table.Expand(x => x.Addresses);
 			var hasCustomerRoleSystemNames = context.DataSegmenter.HasColumn("CustomerRoleSystemNames");
@@ -307,27 +307,14 @@ namespace SmartStore.Services.Customers.Importer
 				if (row.IsTransient)
 				{
 					_customerRepository.Insert(customer);
-					lastInserted = customer;
 				}
 				else
 				{
 					_customerRepository.Update(customer);
-					lastUpdated = customer;
 				}
 			}
 
 			var num = _customerRepository.Context.SaveChanges();
-
-			if (lastInserted != null)
-			{
-				_services.EventPublisher.EntityInserted(lastInserted);
-			}
-
-			if (lastUpdated != null)
-			{
-				_services.EventPublisher.EntityUpdated(lastUpdated);
-			}
-
 			return num;
 		}
 
@@ -619,7 +606,7 @@ namespace SmartStore.Services.Customers.Importer
 						}
 
 						var size = Size.Empty;
-						pictureBinary = _pictureService.ValidatePicture(pictureBinary, out size);
+						pictureBinary = _pictureService.ValidatePicture(pictureBinary, image.MimeType, out size);
 						pictureBinary = _pictureService.FindEqualPicture(pictureBinary, currentPictures, out equalPictureId);
 
 						if (pictureBinary != null && pictureBinary.Length > 0)
